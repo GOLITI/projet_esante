@@ -1,0 +1,40 @@
+# Flutter/Dart
+asthme_app/.dart_tool/
+asthme_app/build/
+asthme_app/.flutter-plugins
+asthme_app/.flutter-plugins-dependencies
+asthme_app/.packages
+asthme_app/pubspec.lock
+
+# Android
+asthme_app/android/app/build/
+asthme_app/android/.gradle/
+asthme_app/android/local.properties
+asthme_app/android/captures/
+asthme_app/android/gradlew
+asthme_app/android/gradlew.bat
+
+# iOS
+asthme_app/ios/Flutter/Generated.xcconfig
+asthme_app/ios/Flutter/flutter_export_environment.sh
+asthme_app/ios/.symlinks/
+asthme_app/ios/Pods/
+asthme_app/ios/.generated/
+
+# Python
+asthme-ia/venv/
+asthme-ia/__pycache__/
+asthme-ia/*.pyc
+asthme-ia/.pytest_cache/
+asthme-ia/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
