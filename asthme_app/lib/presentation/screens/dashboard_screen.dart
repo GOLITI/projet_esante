@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'journal_screen.dart';
 import 'devices_screen.dart';
 import 'resources_screen.dart';
 import 'profile_screen.dart';
 import 'chat_screen.dart';
+import 'package:asthme_app/presentation/blocs/auth/auth_bloc.dart';
+import 'package:asthme_app/presentation/blocs/auth/auth_state.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -113,49 +116,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        // Récupérer le nom de l'utilisateur depuis l'état d'authentification
+        String userName = 'Utilisateur';
+        if (state is AuthAuthenticated) {
+          userName = state.user.name;
+        }
+        
+        // Formater la date actuelle en français (sans localisation)
+        final now = DateTime.now();
+        final jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+        final mois = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+        final jour = jours[now.weekday - 1];
+        final moisNom = mois[now.month - 1];
+        final formattedDate = '$jour, ${now.day} $moisNom ${now.year}';
+        
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Small Logo
-            Image.asset(
-              'assets/images/icons/logo.jpeg',
-              height: 30,
-              errorBuilder: (c, e, s) => const Icon(Icons.local_hospital, color: Colors.purple),
-            ),
-            const SizedBox(width: 12),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text(
-                  'Bonjour Jean',
-                  style: TextStyle(
-                    color: Colors.purple,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                // Small Logo
+                Image.asset(
+                  'assets/images/icons/logo.jpeg',
+                  height: 30,
+                  errorBuilder: (c, e, s) => const Icon(Icons.local_hospital, color: Colors.purple),
                 ),
-                Text(
-                  'Mardi, 11 Nov 2025',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bonjour $userName',
+                      style: const TextStyle(
+                        color: Colors.purple,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      formattedDate,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.notifications_none, color: Colors.purple),
+            ),
           ],
-        ),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.purple.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.notifications_none, color: Colors.purple),
-        ),
-      ],
+        );
+      },
     );
   }
 

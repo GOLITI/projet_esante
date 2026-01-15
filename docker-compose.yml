@@ -1,0 +1,92 @@
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: asthme_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=asthme_db
+      - POSTGRES_USER=asthme_user
+      - POSTGRES_PASSWORD=asthme_password
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - asthme_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asthme_user -d asthme_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend ML (Flask API)
+  backend:
+    build:
+      context: ./asthme-ia
+      dockerfile: Dockerfile
+    image: backend:latest
+    container_name: asthme_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://asthme_user:asthme_password@postgres:5432/asthme_db
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=asthme_db
+      - DB_USER=asthme_user
+      - DB_PASSWORD=asthme_password
+    volumes:
+      # Montage du code en développement (optionnel, commentez en production)
+      - ./asthme-ia:/app
+      # Persister les données ML
+      - ./asthme-ia/data:/app/data
+    networks:
+      - asthme_network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Application Flutter (Web)
+  frontend:
+    build:
+      context: ./asthme_app
+      dockerfile: Dockerfile
+    image: frontend:latest
+    container_name: asthme_frontend
+    ports:
+      - "8080:8080"
+    environment:
+      - BACKEND_API_URL=http://backend:5000
+    volumes:
+      # Montage du code pour hot reload
+      - ./asthme_app:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - asthme_network
+    restart: unless-stopped
+
+networks:
+  asthme_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  asthme_data:
+    driver: local

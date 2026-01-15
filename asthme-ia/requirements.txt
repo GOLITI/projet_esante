@@ -1,0 +1,14 @@
+# Flask - Framework web
+Flask==3.0.3
+Flask-CORS==4.0.0
+Werkzeug==3.0.1
+
+# Base de données PostgreSQL
+psycopg2-binary==2.9.9
+SQLAlchemy==2.0.25
+
+# Configuration
+python-dotenv==1.0.1
+
+# HTTP requests
+requests==2.32.5

@@ -1,0 +1,47 @@
+# Build outputs
+build/
+.dart_tool/
+
+# Cache
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Tests
+test/
+coverage/
+
+# Documentation
+README.md
+docs/
+screenshots/
+
+# Platform specific (non utilisés en production web)
+android/.gradle/
+android/app/build/
+ios/.symlinks/
+ios/Pods/
+ios/Runner.xcworkspace/
+linux/flutter/
+macos/Flutter/
+windows/flutter/
+
+# Node modules (si présents)
+node_modules/

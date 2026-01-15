@@ -28,6 +28,21 @@ asthme-ia/*.pyc
 asthme-ia/.pytest_cache/
 asthme-ia/.env
 
+# Docker & Database
+.env
+postgres_data/
+*.sql.backup
+backup.sql
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
 # IDE
 .vscode/
 .idea/
