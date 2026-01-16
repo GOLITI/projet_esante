@@ -1,7 +1,7 @@
 # Flask - Framework web
 Flask==3.0.3
-Flask-CORS==4.0.0
-Werkzeug==3.0.1
+Flask-CORS==6.0.0
+Werkzeug==3.1.5
 
 # HTTP requests (pour tests)
 requests==2.32.5
