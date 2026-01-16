@@ -82,6 +82,7 @@ class AuthApiRepository implements AuthRepository {
     required String email,
     required String password,
     required String name,
+    required int age,
   }) async {
     try {
       final response = await _client.post(
@@ -91,6 +92,7 @@ class AuthApiRepository implements AuthRepository {
           'email': email,
           'password': password,
           'name': name,
+          'age': age,
         }),
       );
 

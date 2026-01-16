@@ -6,12 +6,15 @@ import 'package:http/http.dart' as http;
 import 'package:asthme_app/presentation/screens/dashboard_screen.dart';
 import 'package:asthme_app/presentation/screens/login_screen.dart';
 import 'package:asthme_app/presentation/screens/register_screen.dart';
+import 'package:asthme_app/presentation/screens/test_sensors_screen.dart';
 import 'package:asthme_app/presentation/blocs/chat/chat_bloc.dart';
 import 'package:asthme_app/presentation/blocs/chat/chat_event.dart';
 import 'package:asthme_app/presentation/blocs/auth/auth_bloc.dart';
 import 'package:asthme_app/presentation/blocs/auth/auth_event.dart';
 import 'package:asthme_app/presentation/blocs/auth/auth_state.dart';
-import 'package:asthme_app/data/repositories/auth_api_repository.dart';
+import 'package:asthme_app/presentation/blocs/prediction/prediction_bloc.dart';
+import 'package:asthme_app/data/repositories/auth_local_repository.dart';
+import 'package:asthme_app/data/repositories/prediction_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,18 +35,26 @@ class MyApp extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider(
-          create: (context) => AuthApiRepository(prefs),
+          create: (context) => AuthLocalRepository(prefs),
+        ),
+        RepositoryProvider(
+          create: (context) => PredictionRepository(),
         ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
             create: (context) => AuthBloc(
-              authRepository: context.read<AuthApiRepository>(),
+              authRepository: context.read<AuthLocalRepository>(),
             )..add(AuthCheckRequested()),
           ),
           BlocProvider(
             create: (context) => ChatBloc()..add(ChatStarted()),
+          ),
+          BlocProvider(
+            create: (context) => PredictionBloc(
+              repository: context.read<PredictionRepository>(),
+            ),
           ),
         ],
         child: MaterialApp(
@@ -59,6 +70,7 @@ class MyApp extends StatelessWidget {
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
             '/dashboard': (context) => const DashboardScreen(),
+            '/test-sensors': (context) => const TestSensorsScreen(),
           },
         ),
       ),

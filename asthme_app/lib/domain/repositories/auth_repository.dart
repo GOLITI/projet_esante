@@ -8,11 +8,12 @@ abstract class AuthRepository {
     required String password,
   });
 
-  /// Inscription avec email, mot de passe et nom
+  /// Inscription avec email, mot de passe, nom et âge
   Future<User> register({
     required String email,
     required String password,
     required String name,
+    required int age,
   });
 
   /// Déconnexion

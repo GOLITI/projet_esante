@@ -2,9 +2,54 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:asthme_app/presentation/blocs/auth/auth_bloc.dart';
 import 'package:asthme_app/presentation/blocs/auth/auth_state.dart';
+import 'package:asthme_app/data/datasources/local_database.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  int? _userAge;
+  String? _userGender;
+  bool _isLoadingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    setState(() => _isLoadingProfile = true);
+    
+    try {
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        final userId = int.parse(authState.user.id);
+        final db = await LocalDatabase.instance.database;
+        
+        final result = await db.query(
+          'user_profile',
+          where: 'user_id = ?',
+          whereArgs: [userId],
+        );
+        
+        if (result.isNotEmpty) {
+          setState(() {
+            _userAge = result.first['age'] as int?;
+            _userGender = result.first['gender'] as String?;
+          });
+        }
+      }
+    } catch (e) {
+      print('❌ Erreur chargement profil: $e');
+    } finally {
+      setState(() => _isLoadingProfile = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,6 +168,41 @@ class ProfileScreen extends StatelessWidget {
                         fontSize: 14,
                       ),
                     ),
+                    if (_userAge != null || _userGender != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (_userAge != null) ...[
+                            Icon(Icons.cake, size: 14, color: Colors.grey.shade600),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$_userAge ans',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                          if (_userAge != null && _userGender != null)
+                            Text(' • ', style: TextStyle(color: Colors.grey.shade600)),
+                          if (_userGender != null) ...[
+                            Icon(
+                              _userGender == 'Male' ? Icons.male : Icons.female,
+                              size: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _userGender == 'Male' ? 'Homme' : 'Femme',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

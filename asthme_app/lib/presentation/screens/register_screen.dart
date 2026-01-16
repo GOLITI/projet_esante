@@ -15,6 +15,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _ageController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -25,6 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _ageController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -48,6 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               email: _emailController.text.trim(),
               password: _passwordController.text,
               name: _nameController.text.trim(),
+              age: int.parse(_ageController.text.trim()),
             ),
           );
     }
@@ -65,6 +68,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 backgroundColor: Colors.red,
               ),
             );
+          } else if (state is AuthAuthenticated) {
+            // Redirection vers le dashboard après inscription réussie
+            Navigator.of(context).pushReplacementNamed('/dashboard');
           }
         },
         builder: (context, state) {
@@ -180,6 +186,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               'Jean Dupont',
                               Icons.person_outline,
                               validator: Validators.validateName,
+                              textInputAction: TextInputAction.next,
+                              enabled: !isLoading,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Age Field
+                            _buildLabel('Âge'),
+                            const SizedBox(height: 8),
+                            _buildTextField(
+                              _ageController,
+                              '25',
+                              Icons.cake_outlined,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Veuillez entrer votre âge';
+                                }
+                                final age = int.tryParse(value);
+                                if (age == null || age < 1 || age > 120) {
+                                  return 'Âge invalide (1-120)';
+                                }
+                                return null;
+                              },
+                              keyboardType: TextInputType.number,
                               textInputAction: TextInputAction.next,
                               enabled: !isLoading,
                             ),

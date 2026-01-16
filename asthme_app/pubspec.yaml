@@ -46,6 +46,16 @@ dependencies:
   
   # Forms & Validation
   formz: ^0.7.0
+  
+  # Sensors & Location
+  geolocator: ^11.0.0
+  permission_handler: ^11.0.0
+  flutter_blue_plus: ^1.32.11
+  
+  # Local Database
+  sqflite: ^2.3.0
+  path_provider: ^2.1.0
+  path: ^1.8.3
 
 dev_dependencies:
   flutter_test:

@@ -1,8 +1,8 @@
 """
-Configuration de la base de données PostgreSQL avec SQLAlchemy
+Configuration de la base de données SQLite avec SQLAlchemy
 """
 import os
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, DECIMAL
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, DECIMAL, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -10,11 +10,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# URL de connexion PostgreSQL
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://asthme_user:asthme_password@postgres:5432/asthme_db')
+# URL de connexion SQLite (base de données locale)
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./asthme_backend.db')
 
 # Créer le moteur SQLAlchemy
-engine = create_engine(DATABASE_URL)
+# check_same_thread=False nécessaire pour SQLite avec FastAPI/Flask
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith('sqlite') else {}
+)
 
 # Créer la session
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
