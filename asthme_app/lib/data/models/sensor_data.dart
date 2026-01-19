@@ -41,10 +41,10 @@ class SensorData {
   /// Créer des données par défaut (pour fallback/test)
   factory SensorData.defaultValues() {
     return SensorData(
-      humidity: 50.0,
-      temperature: 22.0,
-      pm25: 25.0,
-      respiratoryRate: 16.0,
+      humidity: 0.0,
+      temperature: 0.0,
+      pm25: 0.0,
+      respiratoryRate: 0.0,
     );
   }
 

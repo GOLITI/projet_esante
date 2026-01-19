@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:asthme_app/presentation/blocs/auth/auth_bloc.dart';
+import 'package:asthme_app/presentation/blocs/auth/auth_event.dart';
 import 'package:asthme_app/presentation/blocs/auth/auth_state.dart';
 import 'package:asthme_app/data/datasources/local_database.dart';
 
@@ -31,17 +32,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final userId = int.parse(authState.user.id);
         final db = await LocalDatabase.instance.database;
         
+        print('🔍 Chargement profil pour userId: $userId');
+        
         final result = await db.query(
           'user_profile',
           where: 'user_id = ?',
           whereArgs: [userId],
         );
         
+        print('📊 Résultat user_profile: $result');
+        
         if (result.isNotEmpty) {
           setState(() {
             _userAge = result.first['age'] as int?;
             _userGender = result.first['gender'] as String?;
           });
+          print('✅ Profil chargé: âge=$_userAge, genre=$_userGender');
+        } else {
+          print('⚠️ Aucun profil trouvé pour userId: $userId');
         }
       }
     } catch (e) {
@@ -168,7 +176,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontSize: 14,
                       ),
                     ),
-                    if (_userAge != null || _userGender != null) ...[
+                    if (_isLoadingProfile)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 4.0),
+                        child: SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else if (_userAge != null || _userGender != null) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -508,7 +525,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: Border.all(color: Colors.red.shade100),
       ),
       child: TextButton.icon(
-        onPressed: () {},
+        onPressed: () {
+          context.read<AuthBloc>().add(AuthLogoutRequested());
+          Navigator.pushReplacementNamed(context, '/login');
+        },
         icon: const Icon(Icons.logout, color: Colors.red),
         label: const Text(
           'Déconnexion',

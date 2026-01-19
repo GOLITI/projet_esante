@@ -79,7 +79,7 @@ class SensorDataCollectorService {
           humidity: humidity,
           temperature: 22.0, // Température ambiante par défaut
           pm25: pm25,
-          respiratoryRate: 16.0,
+          respiratoryRate: 0.0, // 0 si pas de capteur de fréquence respiratoire
           timestamp: DateTime.now(),
         );
       } else {

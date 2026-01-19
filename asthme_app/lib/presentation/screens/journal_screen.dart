@@ -1,7 +1,54 @@
 import 'package:flutter/material.dart';
+import '../../../data/datasources/local_database.dart';
+import 'clinical_journal_screen.dart';
 
-class JournalScreen extends StatelessWidget {
+class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
+
+  @override
+  State<JournalScreen> createState() => _JournalScreenState();
+}
+
+class _JournalScreenState extends State<JournalScreen> {
+  List<Map<String, dynamic>> _predictions = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPredictions();
+  }
+
+  Future<void> _loadPredictions() async {
+    setState(() => _isLoading = true);
+    try {
+      final db = await LocalDatabase.instance.database;
+      final result = await db.rawQuery('''
+        SELECT 
+          p.id,
+          p.risk_level,
+          p.risk_probability,
+          p.symptoms,
+          p.timestamp,
+          s.humidity,
+          s.temperature,
+          s.pm25,
+          s.respiratory_rate
+        FROM predictions p
+        LEFT JOIN sensor_history s ON p.sensor_data_id = s.id
+        WHERE p.user_id = 1
+        ORDER BY p.timestamp DESC
+        LIMIT 20
+      ''');
+      setState(() {
+        _predictions = result;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Erreur chargement prédictions: $e');
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,6 +57,8 @@ class JournalScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildBackButton(context),
+          const SizedBox(height: 16),
           _buildHeader(),
           const SizedBox(height: 30),
           _buildFilters(),
@@ -21,6 +70,19 @@ class JournalScreen extends StatelessWidget {
           _buildHistoryCard(),
         ],
       ),
+    );
+  }
+
+  Widget _buildBackButton(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back, color: Color(0xFFE040FB)),
+      onPressed: () {
+        // Revenir à l'écran principal du DashboardScreen
+        // On ne peut pas utiliser Navigator.pop() car on n'est pas dans une route séparée
+        // L'utilisateur devra cliquer sur l'icône Home dans la navbar
+      },
+      padding: EdgeInsets.zero,
+      alignment: Alignment.centerLeft,
     );
   }
 
@@ -50,7 +112,12 @@ class JournalScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ClinicalJournalScreen()),
+              ).then((_) => _loadPredictions());
+            },
             icon: const Icon(Icons.add, color: Colors.white, size: 18),
             label: const Text('Saisir', style: TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(
@@ -138,20 +205,27 @@ class JournalScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
             children: [
-              _buildLegendItem('PM2.5', Colors.cyan),
-              const SizedBox(width: 16),
-              _buildLegendItem('CO', Colors.purpleAccent),
+              _buildLegendItem('Humidité', Colors.blue),
+              _buildLegendItem('Température', Colors.orange),
+              _buildLegendItem('PM2.5', Colors.red),
+              _buildLegendItem('Fréq. Resp.', Colors.green),
             ],
           ),
           const SizedBox(height: 20),
           SizedBox(
             height: 200,
-            child: CustomPaint(
-              size: const Size(double.infinity, 200),
-              painter: GraphPainter(),
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : CustomPaint(
+                    size: const Size(double.infinity, 200),
+                    painter: GraphPainter(
+                      predictions: _predictions,
+                    ),
+                  ),
           ),
         ],
       ),
@@ -196,35 +270,159 @@ class JournalScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          _buildSymptomItem(
-            'Sifflements',
-            'Aujourd\'hui, 14:30',
-            'Modéré',
-            Icons.air,
-            Colors.yellow.shade50,
-            Colors.orange,
-          ),
-          const SizedBox(height: 12),
-          _buildSymptomItem(
-            'Dyspnée',
-            'Hier, 09:15',
-            'Léger',
-            Icons.sentiment_dissatisfied,
-            Colors.orange.shade50,
-            Colors.deepOrange,
-          ),
-          const SizedBox(height: 12),
-          _buildSymptomItem(
-            'Toux',
-            'Il y a 2 jours',
-            'Fréquent',
-            Icons.coronavirus_outlined,
-            Colors.red.shade50,
-            Colors.red,
-          ),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_predictions.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Text(
+                  'Aucune donnée disponible.\nCliquez sur "Saisir" pour ajouter une prédiction.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+              ),
+            )
+          else
+            ..._predictions.map((pred) {
+              final symptoms = pred['symptoms'] as String? ?? 'Aucun';
+              final translatedSymptoms = _translateSymptoms(symptoms);
+              final timestamp = DateTime.parse(pred['timestamp'] as String);
+              // Convertir risk_level de String vers int
+              final riskLevel = int.tryParse(pred['risk_level'].toString()) ?? 0;
+              final riskProb = pred['risk_probability'] as double;
+              
+              final timeAgo = _getTimeAgo(timestamp);
+              final severity = _getSeverityFromRisk(riskLevel);
+              final icon = _getIconFromRisk(riskLevel);
+              final bgColor = _getBgColorFromRisk(riskLevel);
+              final iconColor = _getIconColorFromRisk(riskLevel);
+              
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: _buildSymptomItem(
+                  translatedSymptoms,
+                  timeAgo,
+                  '$severity (${(riskProb * 100).toStringAsFixed(0)}%)',
+                  icon,
+                  bgColor,
+                  iconColor,
+                ),
+              );
+            }).toList(),
         ],
       ),
     );
+  }
+
+  String _getTimeAgo(DateTime timestamp) {
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+    
+    if (diff.inDays > 0) {
+      return 'Il y a ${diff.inDays} jour${diff.inDays > 1 ? "s" : ""}';
+    } else if (diff.inHours > 0) {
+      return 'Il y a ${diff.inHours}h';
+    } else if (diff.inMinutes > 0) {
+      return 'Il y a ${diff.inMinutes}min';
+    } else {
+      return 'À l\'instant';
+    }
+  }
+
+  String _translateSymptoms(String symptoms) {
+    // Si c'est un JSON, le parser
+    if (symptoms.trim().startsWith('{')) {
+      try {
+        // Extraire les symptômes actifs (valeur = 1)
+        final activeSymptoms = <String>[];
+        
+        // Dictionnaire de traduction
+        final translations = {
+          'Tiredness': 'Fatigue',
+          'Dry-Cough': 'Toux sèche',
+          'Difficulty-in-Breathing': 'Difficulté respiratoire',
+          'Sore-Throat': 'Mal de gorge',
+          'Pains': 'Douleurs',
+          'Nasal-Congestion': 'Congestion nasale',
+          'Runny-Nose': 'Nez qui coule',
+        };
+        
+        // Parser les symptômes
+        translations.forEach((key, value) {
+          if (symptoms.contains('$key: 1') || symptoms.contains('"$key":1') || symptoms.contains('"$key": 1')) {
+            activeSymptoms.add(value);
+          }
+        });
+        
+        if (activeSymptoms.isEmpty) {
+          return 'Aucun symptôme';
+        }
+        
+        return activeSymptoms.join(', ');
+      } catch (e) {
+        return 'Données symptômes';
+      }
+    }
+    
+    // Sinon, traduction simple
+    final translations = {
+      'tiredness': 'Fatigue',
+      'dry cough': 'Toux sèche',
+      'difficulty breathing': 'Difficulté respiratoire',
+      'sore throat': 'Mal de gorge',
+      'pains': 'Douleurs',
+      'nasal congestion': 'Congestion nasale',
+      'runny nose': 'Nez qui coule',
+      'Aucun symptôme': 'Aucun symptôme',
+    };
+
+    String translated = symptoms;
+    translations.forEach((en, fr) {
+      translated = translated.replaceAll(en, fr);
+    });
+    
+    return translated;
+  }
+
+  String _getSeverityFromRisk(int riskLevel) {
+    switch (riskLevel) {
+      case -1: return 'Journal manuel';
+      case 1: return 'Faible';
+      case 2: return 'Modéré';
+      case 3: return 'Élevé';
+      default: return 'Inconnu';
+    }
+  }
+
+  IconData _getIconFromRisk(int riskLevel) {
+    switch (riskLevel) {
+      case -1: return Icons.edit_note;
+      case 1: return Icons.check_circle_outline;
+      case 2: return Icons.warning_amber_outlined;
+      case 3: return Icons.coronavirus_outlined;
+      default: return Icons.help_outline;
+    }
+  }
+
+  Color _getBgColorFromRisk(int riskLevel) {
+    switch (riskLevel) {
+      case -1: return Colors.blue.shade50;
+      case 1: return Colors.green.shade50;
+      case 2: return Colors.orange.shade50;
+      case 3: return Colors.red.shade50;
+      default: return Colors.grey.shade50;
+    }
+  }
+
+  Color _getIconColorFromRisk(int riskLevel) {
+    switch (riskLevel) {
+      case -1: return Colors.blue;
+      case 1: return Colors.green;
+      case 2: return Colors.orange;
+      case 3: return Colors.red;
+      default: return Colors.grey;
+    }
   }
 
   Widget _buildSymptomItem(String title, String date, String severity, IconData icon, Color bg, Color color) {
@@ -235,50 +433,54 @@ class JournalScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color.withOpacity(0.7), size: 30),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: color.withOpacity(0.7), size: 30),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 15,
+                        height: 1.3,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: color),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        severity,
-                        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text(
-                      date,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          date,
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  border: Border.all(color: color),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  severity,
+                  style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -306,38 +508,68 @@ class JournalScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          _buildCrisisItem(
-            'Crise Sévère',
-            '15 Oct 2025 - Pollution',
-            'Sévère',
-            Icons.notifications_active,
-            Colors.red.shade50,
-            Colors.red,
-            true,
-          ),
-          const SizedBox(height: 12),
-          _buildCrisisItem(
-            'Crise Modérée',
-            '28 Sep 2025 - Exercice',
-            'Modéré',
-            Icons.warning,
-            Colors.orange.shade50,
-            Colors.deepOrange,
-            true,
-          ),
-          const SizedBox(height: 12),
-          _buildCrisisItem(
-            'Crise Légère',
-            '12 Sep 2025 - Température',
-            'Léger',
-            Icons.bolt,
-            Colors.yellow.shade50,
-            Colors.amber.shade700,
-            true,
-          ),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_predictions.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Text(
+                  'Aucune crise enregistrée.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+              ),
+            )
+          else
+            ..._predictions.where((p) {
+              final riskLevelStr = p['risk_level'].toString();
+              final riskLevelInt = int.tryParse(riskLevelStr) ?? 0;
+              return riskLevelInt >= 2;
+            }).map((pred) {
+              final timestamp = DateTime.parse(pred['timestamp'] as String);
+              // Convertir risk_level de String vers int
+              final riskLevel = int.tryParse(pred['risk_level'].toString()) ?? 0;
+              final riskProb = pred['risk_probability'] as double;
+              final symptoms = pred['symptoms'] as String? ?? 'Non spécifié';
+              
+              final severity = _getSeverityFromRisk(riskLevel);
+              final icon = _getCrisisIcon(riskLevel);
+              final bgColor = _getBgColorFromRisk(riskLevel);
+              final iconColor = _getIconColorFromRisk(riskLevel);
+              
+              final dateStr = '${timestamp.day} ${_getMonthName(timestamp.month)} ${timestamp.year}';
+              final subtitle = '$dateStr - $symptoms';
+              
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: _buildCrisisItem(
+                  'Crise $severity',
+                  subtitle,
+                  severity,
+                  icon,
+                  bgColor,
+                  iconColor,
+                  true,
+                ),
+              );
+            }).toList(),
         ],
       ),
     );
+  }
+
+  IconData _getCrisisIcon(int riskLevel) {
+    switch (riskLevel) {
+      case 2: return Icons.warning;
+      case 3: return Icons.notifications_active;
+      default: return Icons.bolt;
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    return months[month - 1];
   }
 
   Widget _buildCrisisItem(String title, String subtitle, String severity, IconData icon, Color bg, Color color, bool showBorder) {
@@ -395,14 +627,32 @@ class JournalScreen extends StatelessWidget {
 }
 
 class GraphPainter extends CustomPainter {
+  final List<Map<String, dynamic>> predictions;
+
+  GraphPainter({required this.predictions});
+
   @override
   void paint(Canvas canvas, Size size) {
+    if (predictions.isEmpty) {
+      // Afficher un message si pas de données
+      final textPainter = TextPainter(
+        text: const TextSpan(
+          text: 'Aucune donnée disponible',
+          style: TextStyle(color: Colors.grey, fontSize: 14),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset((size.width - textPainter.width) / 2, (size.height - textPainter.height) / 2),
+      );
+      return;
+    }
+
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-
-    final path1 = Path();
-    final path2 = Path();
+      ..strokeWidth = 2.5;
 
     // Draw grid lines
     final gridPaint = Paint()
@@ -422,74 +672,93 @@ class GraphPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
-    // Draw labels (simplified)
-    const textStyle = TextStyle(color: Colors.grey, fontSize: 10);
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    // Prendre les 7 dernières prédictions
+    final dataPoints = predictions.take(7).toList().reversed.toList();
+    final count = dataPoints.length;
 
-    // Y axis labels
-    final yLabels = ['600', '450', '300', '150', '0'];
-    for (int i = 0; i < yLabels.length; i++) {
-      textPainter.text = TextSpan(text: yLabels[i], style: textStyle);
-      textPainter.layout();
-      textPainter.paint(canvas, Offset(-25, size.height * (i / 4) - 6));
+    if (count < 2) return;
+
+    // Extraire les données
+    final humidityData = <double>[];
+    final temperatureData = <double>[];
+    final pm25Data = <double>[];
+    final respRateData = <double>[];
+
+    for (var pred in dataPoints) {
+      humidityData.add((pred['humidity'] as num?)?.toDouble() ?? 0.0);
+      temperatureData.add((pred['temperature'] as num?)?.toDouble() ?? 0.0);
+      pm25Data.add((pred['pm25'] as num?)?.toDouble() ?? 0.0);
+      respRateData.add((pred['respiratory_rate'] as num?)?.toDouble() ?? 0.0);
     }
 
-    // X axis labels
-    final xLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Dim'];
-    for (int i = 0; i < xLabels.length; i++) {
-      textPainter.text = TextSpan(text: xLabels[i], style: textStyle);
-      textPainter.layout();
-      textPainter.paint(canvas, Offset(size.width * (i / 5) - 10, size.height + 5));
+    // Normaliser les données pour le graphique (0 à 1)
+    List<double> normalize(List<double> data) {
+      if (data.isEmpty) return [];
+      final max = data.reduce((a, b) => a > b ? a : b);
+      final min = data.reduce((a, b) => a < b ? a : b);
+      if (max == min) return List.filled(data.length, 0.5);
+      return data.map((v) => (v - min) / (max - min)).toList();
     }
 
-    // Curve 1 (Cyan)
-    paint.color = Colors.cyan;
-    path1.moveTo(0, size.height * 0.6);
-    path1.quadraticBezierTo(size.width * 0.2, size.height * 0.4, size.width * 0.4, size.height * 0.6);
-    path1.quadraticBezierTo(size.width * 0.6, size.height * 0.2, size.width * 0.8, size.height * 0.5);
-    path1.lineTo(size.width, size.height * 0.55);
-    
-    // Fill for Curve 1
-    final fillPaint1 = Paint()
-      ..style = PaintingStyle.fill
-      ..shader = LinearGradient(
-        colors: [Colors.cyan.withOpacity(0.2), Colors.cyan.withOpacity(0.0)],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    
-    final fillPath1 = Path.from(path1)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    
-    canvas.drawPath(fillPath1, fillPaint1);
-    canvas.drawPath(path1, paint);
+    final normHumidity = normalize(humidityData);
+    final normTemp = normalize(temperatureData);
+    final normPm25 = normalize(pm25Data);
+    final normRespRate = normalize(respRateData);
 
-    // Curve 2 (Purple)
-    paint.color = Colors.purpleAccent;
-    path2.moveTo(0, size.height * 0.85);
-    path2.quadraticBezierTo(size.width * 0.3, size.height * 0.8, size.width * 0.5, size.height * 0.9);
-    path2.quadraticBezierTo(size.width * 0.7, size.height * 0.85, size.width, size.height * 0.88);
+    // Dessiner les courbes
+    void drawCurve(List<double> data, Color color, double opacity) {
+      final path = Path();
+      final fillPath = Path();
 
-    // Fill for Curve 2
-    final fillPaint2 = Paint()
-      ..style = PaintingStyle.fill
-      ..shader = LinearGradient(
-        colors: [Colors.purpleAccent.withOpacity(0.2), Colors.purpleAccent.withOpacity(0.0)],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      for (int i = 0; i < data.length; i++) {
+        final x = size.width * (i / (count - 1));
+        final y = size.height * (1 - data[i]);
 
-    final fillPath2 = Path.from(path2)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
+        if (i == 0) {
+          path.moveTo(x, y);
+          fillPath.moveTo(x, size.height);
+          fillPath.lineTo(x, y);
+        } else {
+          path.lineTo(x, y);
+          fillPath.lineTo(x, y);
+        }
+      }
 
-    canvas.drawPath(fillPath2, fillPaint2);
-    canvas.drawPath(path2, paint);
+      // Compléter le remplissage
+      fillPath.lineTo(size.width * ((data.length - 1) / (count - 1)), size.height);
+      fillPath.close();
+
+      // Remplissage avec gradient
+      final fillPaint = Paint()
+        ..style = PaintingStyle.fill
+        ..shader = LinearGradient(
+          colors: [color.withOpacity(opacity), color.withOpacity(0.0)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+      canvas.drawPath(fillPath, fillPaint);
+
+      // Ligne
+      paint.color = color;
+      canvas.drawPath(path, paint);
+
+      // Points
+      for (int i = 0; i < data.length; i++) {
+        final x = size.width * (i / (count - 1));
+        final y = size.height * (1 - data[i]);
+        canvas.drawCircle(Offset(x, y), 4, Paint()..color = color);
+        canvas.drawCircle(Offset(x, y), 2, Paint()..color = Colors.white);
+      }
+    }
+
+    // Dessiner toutes les courbes
+    drawCurve(normHumidity, Colors.blue, 0.15);
+    drawCurve(normTemp, Colors.orange, 0.15);
+    drawCurve(normPm25, Colors.red, 0.15);
+    drawCurve(normRespRate, Colors.green, 0.15);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

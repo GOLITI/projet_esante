@@ -53,10 +53,23 @@ class PredictionRepository {
         return null;
       }
 
+      // 2. Sauvegarder les données capteurs ESP32 reçues dans la réponse
+      int? sensorDataId;
+      if (result['sensor_data_used'] != null) {
+        final sensorDataUsed = result['sensor_data_used'];
+        final sensorData = SensorData(
+          humidity: (sensorDataUsed['humidity'] as num).toDouble(),
+          temperature: (sensorDataUsed['temperature'] as num).toDouble(),
+          pm25: (sensorDataUsed['pm25'] as num).toDouble(),
+          respiratoryRate: (sensorDataUsed['respiratory_rate'] as num).toDouble(),
+        );
+        sensorDataId = await _localDatabase.insertSensorData(userId, sensorData);
+      }
+
       // 3. Sauvegarder la prédiction en local
       await _localDatabase.insertPrediction(
         userId: userId,
-        sensorDataId: sensorDataId,
+        sensorDataId: sensorDataId ?? 0,
         riskLevel: result['risk_label'], // "Faible", "Modéré", "Élevé"
         riskProbability: result['risk_score'],
         symptoms: symptoms.toString(), // Convertir Map en String pour stockage

@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String _selectedGender = 'Male';
   bool _acceptTerms = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -51,6 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               password: _passwordController.text,
               name: _nameController.text.trim(),
               age: int.parse(_ageController.text.trim()),
+              gender: _selectedGender,
             ),
           );
     }
@@ -211,6 +213,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               keyboardType: TextInputType.number,
                               textInputAction: TextInputAction.next,
                               enabled: !isLoading,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Gender Field
+                            _buildLabel('Genre'),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: DropdownButtonFormField<String>(
+                                value: _selectedGender,
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.wc, color: Colors.grey.shade600),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                ),
+                                items: const [
+                                  DropdownMenuItem(value: 'Male', child: Text('Homme')),
+                                  DropdownMenuItem(value: 'Female', child: Text('Femme')),
+                                ],
+                                onChanged: isLoading ? null : (value) {
+                                  setState(() => _selectedGender = value!);
+                                },
+                              ),
                             ),
                             const SizedBox(height: 16),
 

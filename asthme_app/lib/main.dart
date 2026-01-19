@@ -15,12 +15,17 @@ import 'package:asthme_app/presentation/blocs/auth/auth_state.dart';
 import 'package:asthme_app/presentation/blocs/prediction/prediction_bloc.dart';
 import 'package:asthme_app/data/repositories/auth_local_repository.dart';
 import 'package:asthme_app/data/repositories/prediction_repository.dart';
+import 'package:asthme_app/data/datasources/auto_sensor_collector.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialiser SharedPreferences
   final prefs = await SharedPreferences.getInstance();
+  
+  // Démarrer la collecte automatique des données capteurs
+  // Les données seront récupérées toutes les 30 secondes depuis le backend
+  AutoSensorCollector.instance.startAutoCollection(intervalSeconds: 30);
   
   runApp(MyApp(prefs: prefs));
 }

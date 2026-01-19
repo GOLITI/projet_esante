@@ -23,9 +23,35 @@ class LocalDatabase {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Incrémenté pour forcer la migration
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
+  }
+
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Recréer la table predictions avec sensor_data_id nullable
+      await db.execute('DROP TABLE IF EXISTS predictions');
+      
+      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+      const textType = 'TEXT NOT NULL';
+      const integerType = 'INTEGER NOT NULL';
+      const realType = 'REAL NOT NULL';
+      
+      await db.execute('''
+      CREATE TABLE predictions (
+        id $idType,
+        user_id $integerType,
+        sensor_data_id INTEGER,
+        risk_level $textType,
+        risk_probability $realType,
+        symptoms $textType,
+        timestamp $textType,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      )
+      ''');
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -65,13 +91,12 @@ class LocalDatabase {
     CREATE TABLE predictions (
       id $idType,
       user_id $integerType,
-      sensor_data_id $integerType,
+      sensor_data_id INTEGER,
       risk_level $textType,
       risk_probability $realType,
       symptoms $textType,
       timestamp $textType,
-      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-      FOREIGN KEY (sensor_data_id) REFERENCES sensor_history (id) ON DELETE CASCADE
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )
     ''');
 

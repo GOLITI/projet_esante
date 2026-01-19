@@ -15,8 +15,9 @@ def main():
     # Créer le dossier models s'il n'existe pas
     os.makedirs('models', exist_ok=True)
     
-    # Initialiser le prédicteur
-    predictor = AsthmaPredictor(model_path='models/asthma_model.pkl')
+    # Initialiser le prédicteur avec seuil optimal Youden (0.443)
+    # Basé sur analyse ROC: 96.7% sensibilité, 98.8% spécificité
+    predictor = AsthmaPredictor(model_path='models/asthma_model.pkl', high_risk_threshold=0.443)
     
     # Charger les données
     print("\nChargement des données...")

@@ -77,9 +77,10 @@ class AuthLocalRepository implements AuthRepository {
     required String password,
     required String name,
     required int age,
+    required String gender,
   }) async {
     try {
-      print('🔵 REGISTER LOCAL: $email');
+      print('🔵 REGISTER LOCAL: $email, age: $age, gender: $gender');
       
       final db = await _db.database;
       
@@ -103,10 +104,10 @@ class AuthLocalRepository implements AuthRepository {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      // Créer le profil avec l'âge
+      // Créer le profil avec l'âge et le genre
       await _db.saveUserProfile(userId, {
         'age': age,
-        'gender': 'Non spécifié',
+        'gender': gender,
         'bmi': 0.0,
         'smoking': 0,
         'physical_activity': 0,

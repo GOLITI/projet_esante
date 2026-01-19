@@ -34,6 +34,17 @@ postgres_data/
 *.sql.backup
 backup.sql
 
+# 🔐 Fichiers sensibles - CRITIQUE
+# Ne jamais committer ces fichiers contenant des clés API
+asthme_app/.env
+asthme_app/.env.local
+asthme_app/.env.*.local
+*.env
+!*.env.example
+
+# Flutter - Clés API et configurations sensibles
+asthme_app/lib/core/constants/api_keys.dart
+
 # OS
 .DS_Store
 Thumbs.db

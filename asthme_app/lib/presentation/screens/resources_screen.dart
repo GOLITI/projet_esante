@@ -14,11 +14,9 @@ class ResourcesScreen extends StatelessWidget {
           const SizedBox(height: 20),
           _buildActionPlanCard(),
           const SizedBox(height: 20),
-          _buildZonesSection(),
+          _buildCrisisActionPlan(),
           const SizedBox(height: 20),
           _buildLearningSection(),
-          const SizedBox(height: 20),
-          _buildProfessionalsSection(),
           const SizedBox(height: 20),
           _buildEmergencySection(),
         ],
@@ -129,38 +127,59 @@ class ResourcesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildZonesSection() {
+  Widget _buildCrisisActionPlan() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.map, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text(
-                    'Zones à Éviter',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              Icon(Icons.health_and_safety, color: Colors.red, size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Plan d\'Action pour Gérer Crises',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              Icon(Icons.error_outline, color: Colors.orange),
             ],
           ),
           const SizedBox(height: 20),
-          _buildZoneItem(
-            'Centre-ville',
-            'Pollution élevée',
-            'Élevé',
-            Icons.directions_car,
-            Colors.red.shade50,
+          _buildActionStep(
+            '1',
+            'Reconnaître les signes',
+            'Toux, respiration sifflante, oppression thoracique, essoufflement',
+            Colors.blue,
+          ),
+          const SizedBox(height: 16),
+          _buildActionStep(
+            '2',
+            'Utiliser inhalateur de secours',
+            'Prendre 2-4 bouffées. Attendre 5-10 minutes pour évaluer',
+            Colors.orange,
+          ),
+          const SizedBox(height: 16),
+          _buildActionStep(
+            '3',
+            'S\'éloigner des déclencheurs',
+            'Air froid, fumée, allergènes, pollution, effort intense',
+            Colors.purple,
+          ),
+          const SizedBox(height: 16),
+          _buildActionStep(
+            '4',
+            'Appeler à l\'aide si nécessaire',
+            'Si aucune amélioration après 10 min, contactez urgences (185)',
             Colors.red,
           ),
         ],
@@ -168,122 +187,123 @@ class ResourcesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildZoneItem(String title, String subtitle, String severity, IconData icon, Color bg, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: Colors.brown.shade900,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: color),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        severity,
-                        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: color.withOpacity(0.8)),
-                ),
-              ],
+  Widget _buildActionStep(String number, String title, String description, Color color) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: 2),
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLearningSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.school, color: Colors.amber, size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Apprendre',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildLearningModule(
+            'Comprendre l\'Asthme',
+            'L\'asthme est une maladie inflammatoire chronique des voies respiratoires. Elle se caractérise par des épisodes récurrents de respiration sifflante, d\'essoufflement et de toux. Les bronches deviennent enflammées et rétrécies, limitant le flux d\'air.',
+            Icons.medical_services,
+            Colors.red.shade100,
+          ),
+          const SizedBox(height: 16),
+          _buildLearningModule(
+            'Utiliser l\'Inhalateur',
+            'Agitez l\'inhalateur 5 fois. Expirez complètement. Placez l\'embout dans votre bouche, appuyez et inspirez lentement et profondément. Retenez votre souffle 10 secondes puis expirez doucement.',
+            Icons.air,
+            Colors.blue.shade100,
+          ),
+          const SizedBox(height: 16),
+          _buildLearningModule(
+            'Qualité de Vie',
+            'Maintenez une activité physique régulière adaptée (natation, marche). Adoptez une alimentation équilibrée riche en fruits et légumes. Évitez les déclencheurs (fumée, allergènes, air froid). Dormez suffisamment et gérez votre stress.',
+            Icons.directions_run,
+            Colors.green.shade100,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLearningSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(Icons.school, color: Colors.amber),
-            SizedBox(width: 8),
-            Text(
-              'Apprendre',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        _buildModuleCard(
-          'Comprendre l\'Asthme',
-          'Les bases de la maladie',
-          '5 modules',
-          '20 min',
-          Icons.medical_services,
-          Colors.red.shade100,
-        ),
-        const SizedBox(height: 12),
-        _buildModuleCard(
-          'Utiliser Inhalateur',
-          'Techniques et bonnes pratiques',
-          'Vidéo',
-          '8 min',
-          Icons.air,
-          Colors.blue.shade100,
-        ),
-        const SizedBox(height: 12),
-        _buildModuleCard(
-          'Qualité de Vie',
-          'Exercices et nutrition',
-          '7 modules',
-          '35 min',
-          Icons.directions_run,
-          Colors.green.shade100,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModuleCard(String title, String subtitle, String tag1, String tag2, IconData icon, Color iconBg) {
+  Widget _buildLearningModule(String title, String content, IconData icon, Color iconBg) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: iconBg,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
+            child: Icon(icon, color: Colors.white, size: 24),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,127 +315,24 @@ class ResourcesScreen extends StatelessWidget {
                     fontSize: 16,
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildTag(tag1, Icons.grid_view),
-                    const SizedBox(width: 8),
-                    _buildTag(tag2, Icons.timer),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTag(String text, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 12, color: Colors.grey),
-          const SizedBox(width: 4),
-          Text(text, style: const TextStyle(fontSize: 12)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfessionalsSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.cyan.shade50,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.local_hospital, color: Colors.blueGrey),
-              SizedBox(width: 8),
-              Text(
-                'Professionnels',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _buildProfessionalItem(
-            'Dr. Marie Dubois',
-            'Pneumologue',
-            '2.3 km',
-            Icons.person,
-            Colors.purple.shade50,
-          ),
-          const SizedBox(height: 12),
-          _buildProfessionalItem(
-            'Pharmacie Centre',
-            'Pharmacie',
-            '0.8 km',
-            Icons.local_pharmacy,
-            Colors.green.shade50,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfessionalItem(String name, String role, String distance, IconData icon, Color bg) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: bg,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Colors.black87),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
                 Text(
-                  name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                Text(role, style: const TextStyle(color: Colors.grey)),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 12, color: Colors.red),
-                    const SizedBox(width: 4),
-                    Text(distance, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
+                  content,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: Colors.grey),
         ],
       ),
     );
   }
+
+
 
   Widget _buildEmergencySection() {
     return Container(
@@ -441,11 +358,13 @@ class ResourcesScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: _buildEmergencyButton('15', 'SAMU', Icons.phone)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildEmergencyButton('112', 'Urgences', Icons.sos)),
+              Expanded(child: _buildEmergencyButton('185', 'SAMU', Icons.local_hospital)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildEmergencyButton('1304', 'SOS Abidjan', Icons.emergency)),
             ],
           ),
+          const SizedBox(height: 12),
+          _buildEmergencyButton('07 49 96 0324', 'Urgence Privée', Icons.phone),
         ],
       ),
     );

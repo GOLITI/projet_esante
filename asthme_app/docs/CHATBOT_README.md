@@ -65,12 +65,21 @@ lib/
 
 ## Configuration API
 
-La clé API Google Generative AI est configurée dans `lib/core/constants/api_constants.dart`
+⚠️ **IMPORTANT - Sécurité** : Ne jamais committer les clés API dans Git !
 
-```dart
-static const String geminiApiKey = 'AIzaSyD51lfcCRa_uv8pGBbs2Y6LPVQyPn7Cr0o';
-static const String geminiModel = 'gemini-1.5-flash';
+### Configuration sécurisée
+
+1. Copiez le fichier `.env.example` en `.env` dans le dossier `asthme_app/`
+2. Ajoutez votre clé API Gemini dans le fichier `.env` :
+
+```env
+GEMINI_API_KEY=votre_cle_api_ici
+GEMINI_MODEL=gemini-2.5-flash
 ```
+
+3. Le fichier `.env` est automatiquement ignoré par Git (voir `.gitignore`)
+
+La clé API est maintenant chargée de manière sécurisée depuis `lib/core/constants/api_constants.dart` en utilisant `String.fromEnvironment()`.
 
 ## Prochaines étapes
 

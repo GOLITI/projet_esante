@@ -8,6 +8,8 @@ import 'package:asthme_app/presentation/blocs/auth/auth_state.dart';
 import 'package:asthme_app/data/datasources/arduino_sensor_service.dart';
 import 'package:asthme_app/data/datasources/bluetooth_sensor_service.dart';
 import 'package:asthme_app/presentation/screens/bluetooth_scan_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 /// Écran de collecte des données capteurs et prédiction
 class PredictionScreen extends StatefulWidget {
@@ -256,61 +258,45 @@ class _PredictionScreenState extends State<PredictionScreen> {
     setState(() => _isCollectingSensors = true);
 
     try {
-      // Configurer l'URL Arduino (à adapter selon votre réseau)
-      // Exemple: 192.168.100.50 si votre Arduino est à cette adresse
-      _arduinoService.setServerUrl('http://192.168.100.50:80');
-
-      // Tester la connexion
-      final isConnected = await _arduinoService.testConnection();
+      // Les données capteurs sont maintenant récupérées depuis le backend Flask
+      // L'ESP32 envoie directement au backend, pas besoin de connexion directe
+      print('📡 Récupération des données capteurs depuis le backend...');
       
-      if (!isConnected) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Arduino non accessible. Vérifiez l\'adresse IP et le WiFi.'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 4),
-            ),
-          );
-        }
-        return;
-      }
+      final response = await http.get(
+        Uri.parse('http://192.168.137.174:5000/api/sensors/latest'),
+      ).timeout(const Duration(seconds: 5));
 
-      // Récupérer les données
-      final sensorData = await _arduinoService.fetchSensorData();
-
-      if (sensorData != null) {
-        // Remplir les champs avec les données Arduino
-        setState(() {
-          _humidityController.text = sensorData.humidity.toStringAsFixed(1);
-          _temperatureController.text = sensorData.temperature.toStringAsFixed(1);
-          _pm25Controller.text = sensorData.pm25.toStringAsFixed(1);
-          _respiratoryRateController.text = sensorData.respiratoryRate.toStringAsFixed(1);
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Données Arduino récupérées !'),
-              backgroundColor: Colors.green,
-            ),
-          );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['success'] == true) {
+          final sensorData = data['data'];
+          
+          // Remplir les champs
+          _humidityController.text = sensorData['humidity'].toString();
+          _temperatureController.text = sensorData['temperature'].toString();
+          _pm25Controller.text = sensorData['pm25'].toString();
+          _respiratoryRateController.text = sensorData['respiratoryRate'].toString();
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Données capteurs chargées depuis le backend'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          throw Exception(data['message'] ?? 'Aucune donnée disponible');
         }
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Échec récupération données Arduino'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
+        throw Exception('Erreur HTTP: ${response.statusCode}');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('❌ Erreur: $e'),
+            content: Text('❌ ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -318,34 +304,6 @@ class _PredictionScreenState extends State<PredictionScreen> {
     } finally {
       setState(() => _isCollectingSensors = false);
     }
-  }
-
-  Widget _buildSensorField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required String suffix,
-    required String hint,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.deepPurple),
-        suffixText: suffix,
-        hintText: hint,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Veuillez entrer une valeur';
-        }
-        if (double.tryParse(value) == null) {
-          return 'Valeur invalide';
-    );
   }
 
   Widget _buildSensorField({

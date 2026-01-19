@@ -9,7 +9,7 @@ class ArduinoSensorService {
   
   // URL du serveur Arduino/ESP32 sur le réseau local
   // Remplacez par l'adresse IP de votre Arduino
-  String _serverUrl = 'http://192.168.100.50:80'; // Exemple
+  String _serverUrl = 'http://192.168.137.103'; // IP de votre ESP32
   
   // État de connexion
   bool _isConnected = false;
